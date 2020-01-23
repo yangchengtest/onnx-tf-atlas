@@ -33,6 +33,9 @@ class PoolMixin(object):
     support_cuda = supports_device("CUDA")
     storage_format, compute_format = get_data_format(x_rank)
 
+    support_cuda = True
+    compute_format = "NCHW"
+
     kernel_shape = node.attrs["kernel_shape"]
     strides = node.attrs.get("strides", [1] * spatial_size)
     pads = node.attrs.get("pads", None)
@@ -88,11 +91,16 @@ class PoolMixin(object):
                                         "Tensorflow")
 
       need_trans = storage_format != "NHWC"
+      need_trans = False
       if need_trans:
         x = tf.transpose(x, perm=get_perm_from_formats(storage_format, "NHWC"))
-      pooled, argmax = pool_func(
-          x, [1] + kernel_shape + [1], padding=pad, strides=[1] +
-          strides + [1])
+        pooled, argmax = pool_func(
+            x, [1] + kernel_shape + [1], padding=pad, strides=[1] +
+            strides + [1])
+      else:
+        pooled, argmax = pool_func(
+            x, [1] + [1] + kernel_shape , padding=pad, strides=[1] + [1]+
+            strides)
       if need_trans:
         pooled = tf.transpose(
             pooled, perm=get_perm_from_formats("NHWC", storage_format))
