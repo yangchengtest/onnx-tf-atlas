@@ -29,12 +29,18 @@ class ConvMixin(BroadcastMixin):
         conv_transpose_output_shape[i] = strides[i] * (input_shape[i] - 1) + kernel_shape[i]
     """
     x = input_dict[node.inputs[0]]
+    
+    print ("node input:",node.inputs[0])
     x_rank = len(x.get_shape())
     x_shape = x.get_shape().as_list()
     spatial_size = x_rank - 2
 
     support_cuda = supports_device("CUDA")
     storage_format, compute_format = get_data_format(x_rank)
+    ## 输入默认是NHWC
+    if node.inputs[0]=='data':
+      storage_format = 'NHWC'
+    print("storage_format:", storage_format) 
     compute_format = "NHWC"    
     support_cuda = False    
     compute_c_idx = compute_format.find("C")
@@ -63,7 +69,6 @@ class ConvMixin(BroadcastMixin):
     in_weights_np = None
     with sess.as_default():
       in_weights_np = in_weights.eval().astype(np.float32)
-    print (in_weights_np.shape)
     weights = np.transpose(in_weights_np,perm)
     dilations = node.attrs.get("dilations", [1] * spatial_size)
     strides = node.attrs.get("strides", [1] * spatial_size)
@@ -74,7 +79,7 @@ class ConvMixin(BroadcastMixin):
     if "auto_pad" not in node.attrs or node.attrs["auto_pad"] == "NOTSET":
       if not transpose:
         if pads != [0, 0] * spatial_size:
-          x = PadMixin.get_padding_as_op(x, pads)
+          x = PadMixin.get_padding_as_op(x, pads,storage_format)
         pad_mode = "VALID"
       else:
         pad_mode = "NOTSET"
@@ -232,7 +237,6 @@ class ConvMixin(BroadcastMixin):
 
     else:
       if group != weights.shape[-1]:
-        print ("data_format:",compute_format)
         if group !=1:
           convolved = [
             tf.nn.convolution(
@@ -264,6 +268,8 @@ class ConvMixin(BroadcastMixin):
              dilations=dilations,
          )
         ]
+    ##内部处理还是要回到NCHW.    
+    storage_format = 'NCHW'
     if len(node.inputs) == 2:
       if support_cuda:
         if group != 1:

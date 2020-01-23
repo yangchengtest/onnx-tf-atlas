@@ -29,7 +29,7 @@ from onnx_tf.common import supports_device as common_supports_device
 from onnx_tf.common.handler_helper import get_all_backend_handlers
 from onnx_tf.pb_wrapper import OnnxNode
 import onnx_tf.common as common
-
+import numpy as np
 
 class TensorflowBackend(Backend):
   """ Tensorflow Backend for ONNX
@@ -41,6 +41,7 @@ class TensorflowBackend(Backend):
               device='CPU',
               strict=True,
               logging_level='INFO',
+              input_format='NCHW',
               **kwargs):
     """Prepare an ONNX model for Tensorflow Backend.
 
@@ -62,10 +63,10 @@ class TensorflowBackend(Backend):
     super(TensorflowBackend, cls).prepare(model, device, **kwargs)
     common.logger.setLevel(logging_level)
 
-    return cls.onnx_model_to_tensorflow_rep(model, strict)
+    return cls.onnx_model_to_tensorflow_rep(model, strict,input_format)
 
   @classmethod
-  def onnx_model_to_tensorflow_rep(cls, model, strict):
+  def onnx_model_to_tensorflow_rep(cls, model, strict,input_format='NCHW'):
     """ Convert ONNX model to TensorflowRep.
 
     :param model: ONNX ModelProto object.
@@ -82,10 +83,10 @@ class TensorflowBackend(Backend):
       opset_import = [make_opsetid(defs.ONNX_DOMAIN, 1)]
     else:
       opset_import = model.opset_import
-    return cls._onnx_graph_to_tensorflow_rep(model.graph, opset_import, strict)
+    return cls._onnx_graph_to_tensorflow_rep(model.graph, opset_import, strict,input_format)
 
   @classmethod
-  def _onnx_graph_to_tensorflow_rep(cls, graph_def, opset, strict):
+  def _onnx_graph_to_tensorflow_rep(cls, graph_def, opset, strict,input_format='NCHW'):
     """ Convert ONNX graph to TensorflowRep.
 
     :param graph_def: ONNX GraphProto object.
@@ -103,7 +104,7 @@ class TensorflowBackend(Backend):
       # initialized: A list of names of the initialized tensors.
       if graph_def.initializer:
         input_dict_items = cls._onnx_initializer_to_input_dict_items(
-            graph_def.initializer)
+            graph_def.initializer,input_format)
         initialized = {init.name for init in graph_def.initializer}
       else:
         input_dict_items = []
@@ -116,6 +117,9 @@ class TensorflowBackend(Backend):
         shape = list(
             d.dim_value if (d.dim_value > 0 and d.dim_param == "") else None
             for d in value_info.type.tensor_type.shape.dim)
+        print("init node name:",value_info.name)
+        if input_format=='NHWC' and value_info.name=='data':
+          shape = [shape[0],shape[2],shape[3],shape[1]]
         value_info_name = value_info.name.replace(
             ":", "_tf_") + "_" + get_unique_suffix(
             ) if ":" in value_info.name else value_info.name
@@ -194,20 +198,29 @@ class TensorflowBackend(Backend):
     return namedtupledict('Outputs', node.outputs)(*output_vals)
 
   @classmethod
-  def _onnx_initializer_to_input_dict_items(cls, initializer):
+  def _onnx_initializer_to_input_dict_items(cls, initializer, input_format='NCHW'):
     """ Convert ONNX graph initializer to input dict items.
 
     :param initializer: ONNX graph initializer, list of TensorProto.
     :return: List of input dict items.
     """
 
-    def tensor2list(onnx_tensor):
+    def tensor2list(onnx_tensor,input_format='NCHW'):
       # Use the onnx.numpy_helper because the data may be raw
-      return numpy_helper.to_array(onnx_tensor).flatten().tolist()
-
+      row_list = numpy_helper.to_array(onnx_tensor).flatten().tolist()
+      print ("init name:",onnx_tensor.name)
+      ## 默认只有一个输入，要不都得转，工作量有点大
+      if input_format=='NHWC' and onnx_tensor.name=='data':
+        c = row_list[1]
+        h = row_list[2]
+        w = row_list[3]
+        return [row_list[0],h,w,c]
+      else:
+        return row_list
+    
     return [(init.name,
              tf.constant(
-                 tensor2list(init),
+                 tensor2list(init,input_format),
                  shape=init.dims,
                  dtype=data_type.onnx2tf(init.data_type)))
             for init in initializer]
