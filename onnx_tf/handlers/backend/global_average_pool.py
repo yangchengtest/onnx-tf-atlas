@@ -14,5 +14,8 @@ class GlobalAveragePool(BackendHandler):
     ##print ("GAP:",dims)
     ##_, dim_window = tf.split(dims, [2, tf.size(dims) - 2])
     ##print ("GAP:",dim_window)
-    
-    return [tf.reduce_mean(x, axis=[2,3], keep_dims=True)]
+    axis = [2,3]
+    channel = kwargs.get("input_format", "NCHW")
+    if channel == "NHWC":
+      axis=[1,2]
+    return [tf.reduce_mean(x, axis=axis, keep_dims=True)]
