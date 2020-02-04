@@ -35,7 +35,6 @@ class ConvMixin(BroadcastMixin):
     x_shape = x.get_shape().as_list()
     spatial_size = x_rank - 2
 
-    storage_format, compute_format = get_data_format(x_rank)
     storage_format = input_format
     print("storage_format:", storage_format) 
     compute_format = input_format   

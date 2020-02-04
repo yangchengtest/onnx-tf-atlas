@@ -20,7 +20,7 @@ PAD_TF_INCOMPATIBLE = "PAD_TF_INCOMPATIBLE"
 class PoolMixin(object):
 
   @classmethod
-  def pool(cls, node, input_dict, pool_func, pooling_type, strict=True):
+  def pool(cls, node, input_dict, pool_func, pooling_type, strict=True, input_format="NCHW"):
     x = input_dict[node.inputs[0]]
     x_rank = len(x.get_shape())
     x_shape = x.get_shape().as_list()
@@ -30,8 +30,9 @@ class PoolMixin(object):
       exception.OP_UNSUPPORTED_EXCEPT(
           "MaxPool with {}D input".format(x_rank), "Tensorflow")
 
-    support_cuda = supports_device("CUDA")
-    storage_format, compute_format = get_data_format(x_rank)
+    support_cuda = True
+    storage_format = input_format
+    compute_format = input_format
 
     kernel_shape = node.attrs["kernel_shape"]
     strides = node.attrs.get("strides", [1] * spatial_size)
@@ -123,7 +124,7 @@ class PoolMixin(object):
     return [pooled]
 
   @classmethod
-  def pool_v11(cls, node, input_dict, pooling_type, strict=True):
+  def pool_v11(cls, node, input_dict, pooling_type, strict=True,input_format="NCHW"):
     x = input_dict[node.inputs[0]]
     orig_x = x
 
@@ -158,8 +159,8 @@ class PoolMixin(object):
       exception.OP_UNSUPPORTED_EXCEPT(pooling_name + " with column major",
                                       "Tensorflow")
 
-    storage_format, _ = get_data_format(x_rank)
-
+    storage_format, _ = input_format
+    compute_format = input_format
     need_trans = storage_format.startswith("NC")
     if need_trans:
       compute_format = "N" + storage_format[2:] + "C"
