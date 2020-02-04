@@ -18,7 +18,7 @@ PAD_TF_INCOMPATIBLE = "PAD_TF_INCOMPATIBLE"
 class ConvMixin(BroadcastMixin):
 
   @classmethod
-  def conv(cls, node, input_dict, transpose=False):
+  def conv(cls, node, input_dict, transpose=False,input_format="NCHW"):
     """ Convolution method for both conv and transposed conv
     For transposed conv,
       Attr pads is not used for input, but declares how much output is padded.
@@ -35,14 +35,11 @@ class ConvMixin(BroadcastMixin):
     x_shape = x.get_shape().as_list()
     spatial_size = x_rank - 2
 
-    support_cuda = supports_device("CUDA")
     storage_format, compute_format = get_data_format(x_rank)
-    ## 输入默认是NHWC
-    if node.inputs[0]=='data':
-      storage_format = 'NHWC'
+    storage_format = input_format
     print("storage_format:", storage_format) 
-    compute_format = "NHWC"    
-    support_cuda = False    
+    compute_format = input_format   
+    support_cuda = True    
     compute_c_idx = compute_format.find("C")
     spatial_format = "".join([d for d in compute_format if d not in ["N", "C"]])
     
@@ -268,8 +265,6 @@ class ConvMixin(BroadcastMixin):
              dilations=dilations,
          )
         ]
-    ##内部处理还是要回到NCHW.    
-    storage_format = 'NCHW'
     if len(node.inputs) == 2:
       if support_cuda:
         if group != 1:
