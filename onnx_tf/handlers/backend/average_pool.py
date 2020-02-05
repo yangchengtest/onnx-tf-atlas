@@ -14,20 +14,20 @@ class AveragePool(PoolMixin, BackendHandler):
   def version_1(cls, node, **kwargs):
     return cls.pool(node, kwargs["tensor_dict"],
                     partial(tf.nn.pool, pooling_type='AVG'), 'AVG',
-                    kwargs.get("strict", False),kwargs.get("input_format", "NCHW"))
+                    kwargs.get("strict", False),input_format=kwargs.get("input_format", "NCHW"))
 
   @classmethod
   def version_7(cls, node, **kwargs):
     return cls.pool(node, kwargs["tensor_dict"],
                     partial(tf.nn.pool, pooling_type='AVG'), 'AVG',
-                    kwargs.get("strict", False),kwargs.get("input_format", "NCHW"))
+                    kwargs.get("strict", False),input_format=kwargs.get("input_format", "NCHW"))
 
   @classmethod
   def version_10(cls, node, **kwargs):
     return cls.pool_v11(node, kwargs["tensor_dict"], "AVG",
-                    kwargs.get("strict", False),kwargs.get("input_format", "NCHW"))
+                    kwargs.get("strict", False),input_format=kwargs.get("input_format", "NCHW"))
 
   @classmethod
   def version_11(cls, node, **kwargs):
     return cls.pool_v11(node, kwargs["tensor_dict"], "AVG",
-                    kwargs.get("strict", False),kwargs.get("input_format", "NCHW"))
+                    kwargs.get("strict", False),input_format=kwargs.get("input_format", "NCHW"))
