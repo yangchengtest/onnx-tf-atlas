@@ -34,9 +34,14 @@ class Upsample(BackendHandler):
     x_shape = x.get_shape().as_list()
     attrs = copy.deepcopy(node.attrs)
     scales = attrs["scales"]
-    new_height = np.floor(x_shape[2] * scales[2])
-    new_weight = np.floor(x_shape[3] * scales[3])
-
+    print ("unsample v7 scale:",scales)
+    input_format = kwargs.get("input_format", "NCHW")
+    if input_format=="NCHW":
+      new_height = np.floor(x_shape[2] * scales[2])
+      new_weight = np.floor(x_shape[3] * scales[3])
+    else:
+      new_height = np.floor(x_shape[1] * scales[1])
+      new_weight = np.floor(x_shape[2] * scales[2])
     mode = attrs.get("mode", "nearest")
     if mode.lower() == "bilinear" or mode.lower() == "linear":
       mode = tf.image.ResizeMethod.BILINEAR
@@ -57,7 +62,11 @@ class Upsample(BackendHandler):
     x_shape = x.get_shape().as_list()
     attrs = copy.deepcopy(node.attrs)
     scales = kwargs["tensor_dict"][node.inputs[1]]
-
+    sess = tf.Session()
+    with sess.as_default():
+      scales_ = scales.eval().astype(np.int32)
+    print ("unsample v9 input shape:",x_shape)
+    print ("unsample v9 scales:",scales_)
     '''
     assert_n_c_scale_is_one = tf.Assert(
         tf.logical_and(tf.equal(scales[0], 1), tf.equal(scales[1], 1)),
@@ -85,9 +94,14 @@ class Upsample(BackendHandler):
               upsample_node, attrs=attrs, c_last_only=True, **kwargs)
       ]
     '''
-    h_w_scale = scales[2:]
-    h_w_shape = x_shape[2:]
-    new_h_w_shape = tf.cast(h_w_scale * h_w_shape, tf.int32)
+    input_format = kwargs.get("input_format", "NCHW")
+    if input_format=="NCHW":
+      new_height = np.floor(x_shape[2] * scales_[2])
+      new_weight = np.floor(x_shape[3] * scales_[3])
+    else:
+      new_height = np.floor(x_shape[1] * scales_[1])
+      new_weight = np.floor(x_shape[2] * scales_[2])
+    attrs["size"] = np.array((new_height, new_weight), dtype=np.int32)
 
     mode = attrs.get("mode", "nearest")
     if mode.lower() == "bilinear" or mode.lower() == "linear":
@@ -95,7 +109,6 @@ class Upsample(BackendHandler):
     else:
       mode = tf.image.ResizeMethod.NEAREST_NEIGHBOR
 
-    attrs["size"] = new_h_w_shape
     attrs["method"] = mode
 
     # Remove scale.

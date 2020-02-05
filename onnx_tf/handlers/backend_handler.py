@@ -103,10 +103,12 @@ class BackendHandler(Handler):
       raise ValueError(
           "c_first_cuda_only and c_last_only can not both be True.")
 
-    if c_first_cuda_only:
-      return cls.c_first_cuda_only(tf_func, inputs, attrs)
-    elif c_last_only:
-      return cls.c_last_only(tf_func, inputs, attrs)
+    input_format = kwargs.get("input_format", "NCHW")
+    if input_format =="NCHW":
+      if c_first_cuda_only:
+        return cls.c_first_cuda_only(tf_func, inputs, attrs)
+      elif c_last_only:
+        return cls.c_last_only(tf_func, inputs, attrs)
 
     return cls._run_tf_func(tf_func, inputs, attrs)
 
@@ -168,6 +170,7 @@ class BackendHandler(Handler):
     """
     if IS_PYTHON3:
       params = list(inspect.signature(tf_func).parameters.keys())
+      print (params)
     else:
       # use closure to get args for function using decorator
       if tf_func.__closure__ is not None:
@@ -178,5 +181,7 @@ class BackendHandler(Handler):
         params = inspect.getargspec(tf_func).args
 
     attrs = cls._process_attrs(attrs)
+    print("tf func:",tf_func)
+    print("tf attr:",[(p, attrs[p]) for p in params if p in attrs])
     return tf_func(*inputs,
                    **dict([(p, attrs[p]) for p in params if p in attrs]))
