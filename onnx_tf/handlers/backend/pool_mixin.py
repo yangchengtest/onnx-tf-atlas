@@ -26,6 +26,8 @@ class PoolMixin(object):
     x_shape = x.get_shape().as_list()
     spatial_size = x_rank - 2
 
+    print("pool shape:",x_shape)
+
     if spatial_size > 3:
       exception.OP_UNSUPPORTED_EXCEPT(
           "MaxPool with {}D input".format(x_rank), "Tensorflow")
@@ -74,7 +76,7 @@ class PoolMixin(object):
           return cls._compatibility_pool(node, input_dict, pooling_type)
       else:
         if pads and pads != [0] * spatial_size * 2:
-          x = PadMixin.get_padding_as_op(x, pads)
+          x = PadMixin.get_padding_as_op(x, pads,storage_format)
         pad = "VALID"
     elif pooling_type == "MAX_WITH_ARGMAX":
       if pad is PAD_TF_INCOMPATIBLE:
@@ -127,6 +129,8 @@ class PoolMixin(object):
   def pool_v11(cls, node, input_dict, pooling_type, strict=True,input_format="NCHW"):
     x = input_dict[node.inputs[0]]
     orig_x = x
+
+    print("pool v11 shape:",x.get_shape().aslist())
 
     kernel_shape = node.attrs["kernel_shape"]
 
