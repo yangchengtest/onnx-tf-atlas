@@ -264,6 +264,7 @@ class ConvMixin(BroadcastMixin):
              dilations=dilations,
          )
         ]
+    print ("node input:",node.inputs)
     if len(node.inputs) == 2:
       if support_cuda:
         if group != 1:

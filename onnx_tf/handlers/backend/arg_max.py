@@ -1,4 +1,5 @@
 import tensorflow as tf
+import copy
 
 from onnx_tf.handlers.backend_handler import BackendHandler
 from onnx_tf.handlers.handler import onnx_op
@@ -17,7 +18,15 @@ class ArgMax(BackendHandler):
   def _common(cls, node, **kwargs):
     axis = node.attrs.get("axis", 0)
     keepdims = node.attrs.get("keepdims", 1)
-    arg_max = cls.make_tensor_from_onnx_node(node, **kwargs)
+    input_format =kwargs.get("input_format", "NCHW")
+    attrs = copy.deepcopy(node.attrs)
+    if input_format =="NCHW":
+      attrs["axis"] = 1
+    else:
+      attrs["axis"] = 3
+    arg_max = cls.make_tensor_from_onnx_node(node, attrs=attrs,**kwargs)
+    if axis==1 and input_format=="NHWC":
+      axis = 3
     if keepdims == 1:
       return [tf.expand_dims(arg_max, axis=axis)]
     return [arg_max]

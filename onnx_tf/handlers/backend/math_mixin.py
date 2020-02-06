@@ -19,6 +19,10 @@ class ReductionMixin(BroadcastMixin):
     axis = attrs.pop("axes", None)
     if isinstance(axis, (list, tuple)) and len(axis) == 1:
       axis = axis[0]
+    input_format =kwargs.get("input_format", "NCHW")
+    print (axis)
+    if axis==1 and input_format=="NHWC":
+      axis = 3
     attrs["axis"] = axis
     # https://github.com/onnx/onnx/issues/585
     attrs["keepdims"] = attrs.pop("keepdims", 1) == 1

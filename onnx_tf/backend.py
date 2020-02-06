@@ -207,10 +207,10 @@ class TensorflowBackend(Backend):
 
     def tensor2list(onnx_tensor,input_format='NCHW'):
       # Use the onnx.numpy_helper because the data may be raw
-      row_list = numpy_helper.to_array(onnx_tensor).flatten().tolist()
+      row_list = numpy_helper.to_array(onnx_tensor)
       print ("init name:",onnx_tensor.name)
-      ## 默认只有一个输入，要不都得转，工作量有点大
-      if input_format=='NHWC':
+      ##所有维度的常量需要转
+      if input_format=='NHWC' and len(row_list)==4:
         c = row_list[1]
         h = row_list[2]
         w = row_list[3]
