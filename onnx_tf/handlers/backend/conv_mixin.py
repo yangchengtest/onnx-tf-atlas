@@ -102,12 +102,18 @@ class ConvMixin(BroadcastMixin):
     group = node.attrs.get("group", 1)
     if group != 1:
         ##weight_groups = tf.split(weights, num_or_size_splits=group, axis=-1)
-        weight_groups = np.split(weights, group, axis=-1)
+        if input_format=="NCHW":
+          weight_groups = np.split(weights, group, axis=-1)
+        else:
+          weight_groups = np.split(weights, group, axis=3)
     else:
         weight_groups = [weights]
     if support_cuda:
       if group != 1:
-        xs = tf.split(x, num_or_size_splits=group, axis=1)
+        if input_format=="NCHW":
+          xs = tf.split(x, num_or_size_splits=group, axis=1)
+        else:
+          xs = tf.split(x, num_or_size_splits=group, axis=3)
     else:
       x = tf.transpose(
           x, perm=get_perm_from_formats(storage_format, compute_format))
@@ -265,10 +271,13 @@ class ConvMixin(BroadcastMixin):
          )
         ]
     print ("node input:",node.inputs)
-    if len(node.inputs) == 2:
+    if len(node.inputs) <= 2:
       if support_cuda:
         if group != 1:
-          output = tf.concat(convolved, axis=1)
+          if input_format=="NCHW":
+            output = tf.concat(convolved, axis=1)
+          else:
+            output = tf.concat(convolved, axis=3)
         else:
           output = convolved
       else:
@@ -281,13 +290,19 @@ class ConvMixin(BroadcastMixin):
 
       if support_cuda:
         if group != 1:
-          output = tf.concat(convolved, axis=1)
+          if input_format == "NCHW":
+            output = tf.concat(convolved, axis=1)
+          else:
+            output = tf.concat(convolved, axis=3)
         else:
           output = convolved
         output = tf.add(output, bias)
       else:
         if group != 1:
-          output = tf.concat(convolved, axis=-1)
+          if input_format == "NCHW":
+            output = tf.concat(convolved, axis=-1)
+          else:
+            output = tf.concat(convolved, axis=3)
         else:
           output = convolved
         output = tf.add(output, bias)
