@@ -208,7 +208,6 @@ class TensorflowBackend(Backend):
     def tensor2list(onnx_tensor,input_format='NCHW'):
       # Use the onnx.numpy_helper because the data may be raw
       row_list = numpy_helper.to_array(onnx_tensor)
-      print ("init name:",onnx_tensor.name)
       ##所有维度的常量需要转
       if input_format=='NHWC' and len(row_list)==4:
         c = row_list[1]
@@ -217,7 +216,12 @@ class TensorflowBackend(Backend):
         return [row_list[0],h,w,c]
       else:
         return row_list
-    
+    for init in initializer:
+      dtype=data_type.onnx2tf(init.data_type)
+      print ("init name:",init.name)
+      print ("init dtype:",init.data_type)
+      print ("dims:",init.dims)
+      tensor2list(init,input_format)  
     return [(init.name,
              tf.constant(
                  tensor2list(init,input_format),

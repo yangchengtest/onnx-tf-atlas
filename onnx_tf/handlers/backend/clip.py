@@ -12,8 +12,8 @@ class Cast(BackendHandler):
   @classmethod
   def _common(cls, node, **kwargs):
     x = kwargs["tensor_dict"][node.inputs[0]]
-    clip_value_min = node.attrs.get("min", tf.reduce_min(x))
-    clip_value_max = node.attrs.get("max", tf.reduce_max(x))
+    clip_value_min = node.attrs.get("min")
+    clip_value_max = node.attrs.get("max")
     return [
         cls.make_tensor_from_onnx_node(
             node, inputs=[x, clip_value_min, clip_value_max])

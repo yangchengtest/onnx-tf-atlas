@@ -109,7 +109,10 @@ class BackendHandler(Handler):
         return cls.c_first_cuda_only(tf_func, inputs, attrs)
       elif c_last_only:
         return cls.c_last_only(tf_func, inputs, attrs)
-
+    if input_format =="NHWC":
+      if attrs.get("perm",None) is not None:
+        attrs["perm"] = [0,3,1,2]
+        print(attrs)
     return cls._run_tf_func(tf_func, inputs, attrs)
 
   @classmethod

@@ -100,6 +100,7 @@ class ConvMixin(BroadcastMixin):
                                         "Tensorflow")
 
     group = node.attrs.get("group", 1)
+    print ("group num:",group)
     if group != 1:
         ##weight_groups = tf.split(weights, num_or_size_splits=group, axis=-1)
         if input_format=="NCHW":

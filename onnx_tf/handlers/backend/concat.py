@@ -18,7 +18,11 @@ class Concat(BackendHandler):
     if input_format =="NCHW":
       attrs["axis"] = 1
     else:
-      attrs["axis"] = 3
+      input_dict = kwargs["tensor_dict"] 
+      x = input_dict[node.inputs[0]]
+      x_shape = x.get_shape().as_list()
+      print ("input_shape:",len(x_shape))      
+      attrs["axis"] = len(x_shape)-1
 
     return [cls.make_tensor_from_onnx_node(node, inputs=[inputs], attrs=attrs)]
 
