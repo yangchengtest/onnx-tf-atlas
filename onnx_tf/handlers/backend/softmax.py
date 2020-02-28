@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import tensorflow as tf
 
@@ -14,8 +15,14 @@ class Softmax(BackendHandler):
   def _common(cls, node, **kwargs):
     x = kwargs["tensor_dict"][node.inputs[0]]
     axis = node.attrs.get("axis", 1)
+    new_axis = kwargs.get("softmax_axis")
+    print ("input axis:",new_axis)
+    if new_axis is not None:
+      axis = new_axis
     axis = axis if axis >= 0 else len(np.shape(x)) + axis
-
+    print ("softmax axis:",axis)
+    print ("softmax shape:",np.shape(x))
+    '''
     if axis == len(np.shape(x)) - 1:
       return [cls.make_tensor_from_onnx_node(node, **kwargs)]
 
@@ -25,7 +32,10 @@ class Softmax(BackendHandler):
     x = tf.reshape(x, cal_shape)
 
     return [tf.reshape(tf.nn.softmax(x), shape)]
-
+    '''
+    attrs = copy.deepcopy(node.attrs)
+    attrs['axis'] = axis
+    return [cls.make_tensor_from_onnx_node(node, inputs=[x], attrs=attrs)]
   @classmethod
   def version_1(cls, node, **kwargs):
     return cls._common(node, **kwargs)

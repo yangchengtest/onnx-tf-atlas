@@ -63,10 +63,10 @@ class TensorflowBackend(Backend):
     super(TensorflowBackend, cls).prepare(model, device, **kwargs)
     common.logger.setLevel(logging_level)
 
-    return cls.onnx_model_to_tensorflow_rep(model, strict,input_format)
+    return cls.onnx_model_to_tensorflow_rep(model, strict,input_format,**kwargs)
 
   @classmethod
-  def onnx_model_to_tensorflow_rep(cls, model, strict, input_format='NCHW'):
+  def onnx_model_to_tensorflow_rep(cls, model, strict, input_format='NCHW',**kwargs):
     """ Convert ONNX model to TensorflowRep.
 
     :param model: ONNX ModelProto object.
@@ -83,10 +83,10 @@ class TensorflowBackend(Backend):
       opset_import = [make_opsetid(defs.ONNX_DOMAIN, 1)]
     else:
       opset_import = model.opset_import
-    return cls._onnx_graph_to_tensorflow_rep(model.graph, opset_import, strict,input_format)
+    return cls._onnx_graph_to_tensorflow_rep(model.graph, opset_import, strict,input_format,**kwargs)
 
   @classmethod
-  def _onnx_graph_to_tensorflow_rep(cls, graph_def, opset, strict,input_format='NCHW'):
+  def _onnx_graph_to_tensorflow_rep(cls, graph_def, opset, strict,input_format='NCHW',**kwargs):
     """ Convert ONNX graph to TensorflowRep.
 
     :param graph_def: ONNX GraphProto object.
@@ -144,7 +144,7 @@ class TensorflowBackend(Backend):
       for node in graph_def.node:
         onnx_node = OnnxNode(node)
         output_ops = cls._onnx_node_to_tensorflow_op(
-            onnx_node, tensor_dict, handlers, opset=opset, strict=strict,input_format=input_format)
+            onnx_node, tensor_dict, handlers, opset=opset, strict=strict,input_format=input_format, **kwargs)
         curr_node_output_map = dict(zip(onnx_node.outputs, output_ops))
         tensor_dict.update(curr_node_output_map)
 
@@ -236,7 +236,7 @@ class TensorflowBackend(Backend):
                                   handlers=None,
                                   opset=None,
                                   strict=True,
-                                  input_format="NCHW"):
+                                  input_format="NCHW",**kwargs):
     """
     Convert onnx node to tensorflow op.
 
@@ -253,7 +253,7 @@ class TensorflowBackend(Backend):
     handlers = handlers or cls._get_handlers(opset)
     handler = handlers[node.domain].get(node.op_type, None)
     if handler:
-      return handler.handle(node, tensor_dict=tensor_dict, strict=strict,input_format=input_format)
+      return handler.handle(node, tensor_dict=tensor_dict, strict=strict,input_format=input_format,**kwargs)
     else:
       exception.OP_UNIMPLEMENTED_EXCEPT(node.op_type)
 
