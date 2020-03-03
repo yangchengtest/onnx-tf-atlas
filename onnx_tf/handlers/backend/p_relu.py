@@ -16,7 +16,11 @@ class PRelu(BackendHandler):
     """
     tensor_dict = kwargs["tensor_dict"]
     x = tensor_dict[node.inputs[0]]
-    slope = BroadcastMixin.explicit_broadcast([x, tensor_dict[node.inputs[1]]])
+    y = tensor_dict[node.inputs[1]]
+    input_format = kwargs.get("input_format", "NCHW")
+    if input_format =="NHWC":
+      y = tf.transpose(y, [1, 2, 0])
+    slope = BroadcastMixin.explicit_broadcast([x, y])
     pos = tf.nn.relu(x)
     neg = slope * (x - abs(x)) * 0.5
     return [pos + neg]

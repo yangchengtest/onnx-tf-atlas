@@ -20,9 +20,17 @@ class ReductionMixin(BroadcastMixin):
     if isinstance(axis, (list, tuple)) and len(axis) == 1:
       axis = axis[0]
     input_format =kwargs.get("input_format", "NCHW")
-    print (axis)
+    input_dict = kwargs["tensor_dict"]
+    x = input_dict[node.inputs[0]]
+    x_rank = len(x.get_shape())
+    if isinstance(axis, (list, tuple)) and len(axis) > 1 and input_format=="NHWC":
+      newaxis = []
+      for axis_item in axis:
+        newaxis.append(axis_item-1)
+      axis = newaxis  
     if axis==1 and input_format=="NHWC":
-      axis = 3
+      axis = x_rank-1
+    print (axis)  
     attrs["axis"] = axis
     # https://github.com/onnx/onnx/issues/585
     attrs["keepdims"] = attrs.pop("keepdims", 1) == 1

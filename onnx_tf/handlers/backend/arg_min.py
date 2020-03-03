@@ -19,10 +19,13 @@ class ArgMin(BackendHandler):
     keepdims = node.attrs.get("keepdims", 1)
     input_format =kwargs.get("input_format", "NCHW")
     attrs = copy.deepcopy(node.attrs)
+    input_dict = kwargs["tensor_dict"]
+    x = input_dict[node.inputs[0]]
+    x_rank = len(x.get_shape())
     if input_format =="NCHW":
       attrs["axis"] = 1
     else:
-      attrs["axis"] = 3
+      attrs["axis"] = x_rank-1
     arg_max = cls.make_tensor_from_onnx_node(node, attrs=attrs,**kwargs)
 
     if keepdims == 1:

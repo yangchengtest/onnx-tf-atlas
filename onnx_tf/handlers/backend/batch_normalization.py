@@ -26,9 +26,12 @@ class BatchNormalization(BackendHandler):
     x = tensor_dict[node.inputs[0]]
     x_shape = x.get_shape().as_list()
     x_rank = len(x_shape)
-
     params_shape_broadcast = list([1, x_shape[1]] +
                                   [1 for _ in range(2, x_rank)])
+    input_format = kwargs.get("input_format", "NCHW")
+    if input_format =="NHWC":
+      params_shape_broadcast = list([1] +
+                                  [1 for _ in range(2, x_rank)]+[x_shape[x_rank-1]])
 
     total_num_dim = len(x.get_shape())
     scale = tf.reshape(tensor_dict[node.inputs[1]], params_shape_broadcast)

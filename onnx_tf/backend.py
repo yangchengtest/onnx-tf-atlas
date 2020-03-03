@@ -209,11 +209,11 @@ class TensorflowBackend(Backend):
       # Use the onnx.numpy_helper because the data may be raw
       row_list = numpy_helper.to_array(onnx_tensor)
       ##所有维度的常量需要转
-      if input_format=='NHWC' and len(row_list)==4:
+      if input_format=='NHWC' and (row_list is not None) and list(np.array(row_list).shape)==[4]:
         c = row_list[1]
         h = row_list[2]
         w = row_list[3]
-        return [row_list[0],h,w,c]
+        return [row_list[0],h,w,c]  
       else:
         return row_list
     for init in initializer:
