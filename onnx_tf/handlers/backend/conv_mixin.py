@@ -31,17 +31,18 @@ class ConvMixin(BroadcastMixin):
     x = input_dict[node.inputs[0]]
     
     print ("node input:",node.inputs[0])
+    if node.inputs[0] == "data":
+       x = tf.transpose(x, [0, 2, 3, 1])
     x_rank = len(x.get_shape())
     x_shape = x.get_shape().as_list()
     spatial_size = x_rank - 2
-
+    
     storage_format = input_format
     print("storage_format:", storage_format) 
     compute_format = input_format   
     support_cuda = True    
     compute_c_idx = compute_format.find("C")
     spatial_format = "".join([d for d in compute_format if d not in ["N", "C"]])
-    
     in_weights = input_dict[node.inputs[1]]
     weights_rank = len(in_weights.get_shape())
     if transpose:

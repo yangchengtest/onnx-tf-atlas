@@ -118,7 +118,7 @@ class TensorflowBackend(Backend):
             d.dim_value if (d.dim_value > 0 and d.dim_param == "") else None
             for d in value_info.type.tensor_type.shape.dim)
         print("init node name:",value_info.name)
-        if input_format=='NHWC':
+        if input_format=='NHWC' and value_info.name!="data":
           shape = [shape[0],shape[2],shape[3],shape[1]]
         value_info_name = value_info.name.replace(
             ":", "_tf_") + "_" + get_unique_suffix(
@@ -205,11 +205,11 @@ class TensorflowBackend(Backend):
     :return: List of input dict items.
     """
 
-    def tensor2list(onnx_tensor,input_format='NCHW'):
+    def tensor2list(onnx_tensor,input_format='NCHW',name=None):
       # Use the onnx.numpy_helper because the data may be raw
       row_list = numpy_helper.to_array(onnx_tensor)
       ##所有维度的常量需要转
-      if input_format=='NHWC' and (row_list is not None) and list(np.array(row_list).shape)==[4]:
+      if input_format=='NHWC' and (row_list is not None) and list(np.array(row_list).shape)==[4] and name!="data":
         c = row_list[1]
         h = row_list[2]
         w = row_list[3]
@@ -224,7 +224,7 @@ class TensorflowBackend(Backend):
       tensor2list(init,input_format)  
     return [(init.name,
              tf.constant(
-                 tensor2list(init,input_format),
+                 tensor2list(init,input_format,init.name),
                  shape=init.dims,
                  dtype=data_type.onnx2tf(init.data_type)))
             for init in initializer]
