@@ -102,25 +102,31 @@ class ConvMixin(BroadcastMixin):
 
     group = node.attrs.get("group", 1)
     print ("group num:",group)
+    # only group is not equal channel use split
     if group != 1:
         ##weight_groups = tf.split(weights, num_or_size_splits=group, axis=-1)
-        if input_format=="NCHW":
-          weight_groups = np.split(weights, group, axis=-1)
-        else:
+        if input_format=="NCHW" and group!=x_shape[1]:
+          weight_groups = np.split(weights, group, axis=1)
+        elif input_format=="NHWC" and group!=x_shape[len(x_shape)-1]:
           weight_groups = np.split(weights, group, axis=3)
+        else:
+          weight_groups = [weights]          
     else:
         weight_groups = [weights]
     if support_cuda:
       if group != 1:
-        if input_format=="NCHW":
+        if input_format=="NCHW" and group!=x_shape[1]:
           xs = tf.split(x, num_or_size_splits=group, axis=1)
-        else:
+        elif input_format=="NHWC" and group!=x_shape[len(x_shape)-1]:
           xs = tf.split(x, num_or_size_splits=group, axis=3)
     else:
       x = tf.transpose(
           x, perm=get_perm_from_formats(storage_format, compute_format))
-      if group != 1:    
-        xs = tf.split(x, num_or_size_splits=group, axis=-1)
+      if group != 1:
+        if input_format=="NCHW" and group!=x_shape[1]:
+          xs = tf.split(x, num_or_size_splits=group, axis=1)
+        elif input_format=="NHWC" and group!=x_shape[len(x_shape)-1]:
+          xs = tf.split(x, num_or_size_splits=group, axis=3)
 
     if transpose:
       if dilations != [1] * spatial_size:
@@ -240,7 +246,7 @@ class ConvMixin(BroadcastMixin):
           convolved.append(conv_rs)
 
     else:
-      if group != weights.shape[-1]:
+      if (input_format=="NCHW" and group!=x_shape[1]) or (input_format=="NHWC" and group!=x_shape[-1]):
         if group !=1:
           convolved = [
             tf.nn.convolution(
@@ -261,10 +267,11 @@ class ConvMixin(BroadcastMixin):
               dilation_rate=dilations,
               data_format=compute_format)
       else:
+        weight = np.transpose(weight_groups[0],[0,1,3,2])
         convolved = [
           tf.nn.depthwise_conv2d(
              x,
-             tf.transpose(weights, [0, 1, 3, 2]),  # [filter_height, filter_width, in_channels, multiplier (=1)]
+             weight,  # [filter_height, filter_width, in_channels, multiplier (=1)]
              strides=_get_sequence(strides, 2, channel_index=3, name="strides"),  # requires a 4-d list
              padding="VALID",
              rate=None,

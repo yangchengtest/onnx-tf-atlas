@@ -22,7 +22,10 @@ class Concat(BackendHandler):
       x = input_dict[node.inputs[0]]
       x_shape = x.get_shape().as_list()
       print ("input_shape:",len(x_shape))      
-      attrs["axis"] = len(x_shape)-1
+      if len(x_shape)==4:
+        attrs["axis"] = len(x_shape)-1
+      else:
+        attrs["axis"] = -1      
 
     return [cls.make_tensor_from_onnx_node(node, inputs=[inputs], attrs=attrs)]
 

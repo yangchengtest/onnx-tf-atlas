@@ -31,6 +31,13 @@ class Reshape(BackendHandler):
       with sess.as_default():
         shape_val = shape.eval().astype(np.int64)
         attrs = copy.deepcopy(node.attrs)
+        #extend to 4 dims
+        add = []
+        if (shape_val.shape[0]<4):
+          for i in range(4-shape_val.shape[0]):
+            add.append(1)
+        shape_val = np.append(add,shape_val)
+        print ("shape val:",shape_val)
         attrs.pop("shape", None)
         y = cls.make_tensor_from_onnx_node(
             node, inputs=[x, shape_val], attrs=attrs, **kwargs)     
