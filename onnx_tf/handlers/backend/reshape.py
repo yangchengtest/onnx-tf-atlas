@@ -98,14 +98,16 @@ class Reshape(BackendHandler):
       with sess.as_default():
         shape_val = shape.eval().astype(np.int64)
         indices = list(np.where(shape_val==-1))
+        shape_list = shape_val.tolist()
         if indices is not None:
-          shape_val_first = shape_val[:int(indices[0])]
-          shape_val_second = shape_val[int(indices[0])+1:]
-          shape_val_end = np.array(-1)
-          shape_val = np.hstack((shape_val_first,shape_val_second))
-          shape_val = np.hstack((shape_val,shape_val_end))
-        print ("shape_val",shape_val)   
-        copied_shape = shape_val
+          shape_val_result = [shape_list[0]]
+          for i in range(4-len(shape_list)):
+            shape_val_result.append(1)
+          for i in range(2,len(shape_list)):
+            shape_val_result.append(shape_list[i])
+          shape_val_result.append(shape_list[1])
+        print ("shape_val",shape_val_result)   
+        copied_shape = shape_val_result
     else:
     # Extract indicies of the shape paramter where
     # a copy from the original dimension size is needed.
