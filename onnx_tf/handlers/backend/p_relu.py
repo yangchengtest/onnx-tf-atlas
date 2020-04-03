@@ -23,7 +23,7 @@ class PRelu(BackendHandler):
     slope = BroadcastMixin.explicit_broadcast([x, y])
     pos = tf.nn.relu(x)
     neg = slope * (x - abs(x)) * 0.5
-    return [pos + neg]
+    return [tf.add(pos,neg)]
 
   @classmethod
   def version_1(cls, node, **kwargs):

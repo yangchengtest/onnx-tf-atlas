@@ -96,18 +96,19 @@ class Reshape(BackendHandler):
     elif is_const:
       sess = tf.Session()
       with sess.as_default():
+        x = tf.transpose(tensor,[0,3,1,2])
         shape_val = shape.eval().astype(np.int64)
-        indices = list(np.where(shape_val==-1))
         shape_list = shape_val.tolist()
-        if indices is not None:
-          shape_val_result = [shape_list[0]]
-          for i in range(4-len(shape_list)):
-            shape_val_result.append(1)
-          for i in range(2,len(shape_list)):
-            shape_val_result.append(shape_list[i])
-          shape_val_result.append(shape_list[1])
-        print ("shape_val",shape_val_result)   
-        copied_shape = shape_val_result
+        for i in range(4-len(shape_list)):
+          shape_list.insert(2,1)
+        print ("shape_val",shape_list)   
+        copied_shape = shape_list
+        attrs = copy.deepcopy(node.attrs)
+        attrs.pop("shape", None)
+        return [tf.transpose(
+        cls.make_tensor_from_onnx_node(
+            node, inputs=[x, copied_shape], attrs=attrs, **kwargs),[0,2,3,1])
+        ]
     else:
     # Extract indicies of the shape paramter where
     # a copy from the original dimension size is needed.
@@ -122,12 +123,12 @@ class Reshape(BackendHandler):
     # Perform the copy wherever requested (wherever dim_size == 0)
       copied_shape = shape + indices_scattered
       
-    attrs = copy.deepcopy(node.attrs)
-    attrs.pop("shape", None)
-    return [
+      attrs = copy.deepcopy(node.attrs)
+      attrs.pop("shape", None)
+      return [
         cls.make_tensor_from_onnx_node(
             node, inputs=[tensor, copied_shape], attrs=attrs, **kwargs)
-    ]
+      ]
 
   @classmethod
   def version_1(cls, node, **kwargs):

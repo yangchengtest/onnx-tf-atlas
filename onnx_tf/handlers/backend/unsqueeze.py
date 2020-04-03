@@ -13,6 +13,7 @@ class Unsqueeze(BackendHandler):
 
   @classmethod
   def _common(cls, node, **kwargs):
+    '''
     attrs = copy.deepcopy(node.attrs)
     axes = attrs.pop("axes")
     if len(axes) != 1:
@@ -22,7 +23,10 @@ class Unsqueeze(BackendHandler):
       return [x]
     attrs["axis"] = axes[0]
     return [cls.make_tensor_from_onnx_node(node, attrs=attrs, **kwargs)]
-
+    '''
+    ## None op
+    x = kwargs["tensor_dict"][node.inputs[0]]
+    return [x]
   @classmethod
   def version_1(cls, node, **kwargs):
     return cls._common(node, **kwargs)
